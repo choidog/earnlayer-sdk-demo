@@ -1,135 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  MCPClient, 
-  EarnLayerAdService, 
-  AdDisplay, 
-  MCPAdDisplay,
-  DisplayAdComponent,
-  useMCPAds,
-  EarnLayerAdType
-} from '@earnlayer/chat-ads';
-import type { MCPResponse, DisplayAd } from '@earnlayer/chat-ads';
+import React, { useState, useRef, useEffect } from 'react';
+import { useConversation, useMCPAds, EarnLayerAdType } from '@earnlayer/chat-ads';
+import { useGeminiMCP } from '../hooks/useGeminiMCP';
+import type { GeminiMCPConfig } from '../hooks/useGeminiMCP';
+import { AdsStatusModal } from './AdsStatusModal';
 import './ChatApp.css';
 
-// Initialize SDK services
-const mcpClient = new MCPClient({
-  mcpUrl: 'https://earnlayer-mcp-server-production.up.railway.app/mcp',
-  apiKey: 'demo-api-key' // Replace with real API key
-});
-
-const adService = new EarnLayerAdService({
-  mcpClient,
-  displayApiUrl: 'https://your-backend.com' // Replace with real backend URL
-});
-
-interface ChatMessage {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  mcpResponse?: MCPResponse;
-  displayAds?: DisplayAd[];
-}
-
 export const ChatApp: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  console.log('🔧 ChatApp component rendering...');
+  
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    text: string;
+    isUser: boolean;
+    timestamp: Date;
+  }>>([]);
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAdsModal, setShowAdsModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Demo conversation ID
-  const conversationId = 'demo-conversation-123';
-  const creatorId = 'demo-creator-456';
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  
+  // Configuration from environment variables
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const mcpUrl = `${baseUrl}/api/mcp/query`;
+  const apiKey = import.meta.env.VITE_API_KEY || 'demo-api-key';
+  const creatorId = import.meta.env.VITE_CREATOR_ID || 'd64a4899-20e4-4ecd-a53e-057aceed54cf';
+  
+  // Gemini MCP Configuration from environment variables
+  const geminiConfig = {
+    geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+    mcpServerUrl: mcpUrl, // Use the same MCP URL as the backend
+    creatorId: creatorId,
+    model: import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-pro', // Latest Gemini 2.5 Pro model
+    temperature: parseFloat(import.meta.env.VITE_GEMINI_TEMPERATURE || '0.7'),
+    maxTokens: parseInt(import.meta.env.VITE_GEMINI_MAX_TOKENS || '1000')
   };
 
+  // Initialize conversation
+  const {
+    conversationId,
+    isLoading: conversationLoading,
+    error: conversationError,
+    initializeConversation,
+    isHealthy
+  } = useConversation({
+    baseUrl,
+    creatorId,
+    autoInitialize: true,
+    initialConfig: {
+      ad_preferences: {
+        ad_types: [EarnLayerAdType.HYPERLINK, EarnLayerAdType.POPUP, EarnLayerAdType.BANNER],
+        frequency: 'normal',
+        revenue_vs_relevance: 0.5
+      }
+    }
+  });
+
+  // MCP integration
+  const {
+    mcpAds,
+    displayAds,
+    isLoading: mcpLoading,
+    error: mcpError,
+    searchAds,
+    isHealthy: mcpHealthy
+  } = useMCPAds({
+    mcpUrl,
+    baseUrl,
+    apiKey,
+    creatorId,
+    conversationId: conversationId || undefined,
+    autoRequestDisplayAds: true,
+    defaultAdTypes: [EarnLayerAdType.HYPERLINK, EarnLayerAdType.POPUP, EarnLayerAdType.BANNER, EarnLayerAdType.VIDEO, EarnLayerAdType.THINKING]
+  });
+
+  // Gemini MCP integration
+  const {
+    isLoading: geminiLoading,
+    error: geminiError,
+    conversationId: geminiConversationId,
+    lastResponse: geminiResponse,
+    sendMessage: sendGeminiMessage,
+    initializeConversation: initializeGeminiConversation,
+    resetConversation: resetGeminiConversation
+  } = useGeminiMCP({
+    config: geminiConfig,
+    autoInitialize: false // We'll initialize manually when needed
+  });
+
+  // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const simulateAIResponse = async (userMessage: string): Promise<{ text: string; mcpResponse: MCPResponse; displayAds: DisplayAd[] }> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-    // Generate contextual AI response based on user input
-    const responses = [
-      `I understand you're asking about "${userMessage}". Let me help you with that!`,
-      `Great question about "${userMessage}"! Here's what I found for you.`,
-      `Based on your query "${userMessage}", I have some relevant information to share.`,
-      `I've researched "${userMessage}" and here are the key insights.`
-    ];
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-
-    // Simulate MCP response with contextual ads
-    const mockMcpResponse: MCPResponse = {
-      result: {
-        content: [{
-          query: userMessage,
-          ads: [
-            {
-              title: 'AI Tools Newsletter',
-              url: 'https://example.com/ai-tools',
-              content: 'Get the latest AI tools and updates',
-              similarity: 0.85
-            },
-            {
-              title: 'Productivity Apps',
-              url: 'https://example.com/productivity',
-              content: 'Boost your productivity with these apps',
-              similarity: 0.78
-            }
-          ],
-          content: [
-            {
-              title: 'AI Development Guide',
-              content: 'Learn how to build AI applications',
-              similarity: 0.92
-            }
-          ]
-        }]
-      }
-    };
-
-    // Simulate display ads
-    const mockDisplayAds: DisplayAd[] = [
-      {
-        ad_id: `ad-${Date.now()}`,
-        title: 'Premium AI Tools',
-        description: 'Access advanced AI features and tools',
-        url: 'https://example.com/premium',
-        ad_type: EarnLayerAdType.POPUP,
-        placement: 'sidebar',
-        similarity: 0.9,
-        source: 'contextual',
-        impression_id: `imp-${Date.now()}`
-      },
-      {
-        ad_id: `ad-${Date.now() + 1}`,
-        title: 'Developer Resources',
-        description: 'Essential tools for developers',
-        url: 'https://example.com/dev-resources',
-        ad_type: EarnLayerAdType.BANNER,
-        placement: 'sidebar',
-        similarity: 0.82,
-        source: 'contextual',
-        impression_id: `imp-${Date.now() + 1}`
-      }
-    ];
-
-    return {
-      text: randomResponse,
-      mcpResponse: mockMcpResponse,
-      displayAds: mockDisplayAds
-    };
-  };
-
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || loading) return;
+    if (!inputValue.trim() || isLoading || !conversationId) return;
 
-    const userMessage: ChatMessage = {
+    const userMessage = {
       id: Date.now().toString(),
       text: inputValue,
       isUser: true,
@@ -138,36 +104,66 @@ export const ChatApp: React.FC = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      // Simulate AI response with ads
-      const aiResponse = await simulateAIResponse(inputValue);
+      console.log('🚀 Sending message to Gemini with MCP integration:', inputValue);
       
-      const assistantMessage: ChatMessage = {
+      // Send message to Gemini with MCP integration
+      const geminiResult = await sendGeminiMessage(inputValue);
+      
+      console.log('✅ Received Gemini response:', geminiResult);
+
+      // Create response from Gemini
+      const responseText = geminiResult.content || `I understand you're asking about "${inputValue}". Here's what I found:`;
+
+      const assistantMessage = {
         id: (Date.now() + 1).toString(),
-        text: aiResponse.text,
+        text: responseText,
         isUser: false,
-        timestamp: new Date(),
-        mcpResponse: aiResponse.mcpResponse,
-        displayAds: aiResponse.displayAds
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('❌ Error sending message to Gemini:', error);
       
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an error processing your message. Please try again.',
-        isUser: false,
-        timestamp: new Date()
-      };
+      // Fallback: use simple MCP response
+      try {
+        console.log('🔄 Falling back to MCP-only response...');
+        await searchAds([inputValue]);
+        
+        let responseText = `I received your message: "${inputValue}". `;
+        
+        if (mcpAds.length > 0) {
+          responseText += `I found ${mcpAds.length} relevant ads for you.`;
+        } else {
+          responseText += `I couldn't find any specific ads for this query.`;
+        }
 
-      setMessages(prev => [...prev, errorMessage]);
+        const fallbackMessage = {
+          id: (Date.now() + 1).toString(),
+          text: responseText,
+          isUser: false,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, fallbackMessage]);
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+        
+        const errorMessage = {
+          id: (Date.now() + 1).toString(),
+          text: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isUser: false,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -178,24 +174,60 @@ export const ChatApp: React.FC = () => {
     }
   };
 
-  const handleAdClick = (ad: DisplayAd) => {
-    console.log('Ad clicked:', ad);
-    // In a real app, you'd track this click
-    window.open(ad.url, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleAdError = (error: string) => {
-    console.error('Ad error:', error);
+  const handleResetGeminiConversation = () => {
+    resetGeminiConversation();
+    setMessages([]);
+    console.log('🔄 Reset Gemini conversation');
   };
 
   return (
     <div className="chat-app">
       <div className="chat-header">
-        <h1>EarnLayer Chat Demo</h1>
-        <p>Powered by @earnlayer/chat-ads SDK</p>
-        <div className="chat-info">
-          <span>Conversation ID: {conversationId}</span>
-          <span>Creator ID: {creatorId}</span>
+        <h1>🎯 EarnLayer SDK Demo</h1>
+        <p>✅ React is working! - Gemini MCP Integration Active</p>
+        
+        <div className="debug-info">
+          <details>
+            <summary>🔧 Configuration & Debug Info</summary>
+            <div className="debug-details">
+              <p><strong>Backend URL:</strong> {baseUrl}</p>
+              <p><strong>MCP URL:</strong> {mcpUrl}</p>
+              <p><strong>API Key:</strong> {apiKey ? '✅ Configured' : '❌ Missing'}</p>
+              <p><strong>Creator ID:</strong> {creatorId}</p>
+              <p><strong>Gemini API Key:</strong> {geminiConfig.geminiApiKey ? '✅ Configured' : '❌ Missing'}</p>
+              <p><strong>Gemini Model:</strong> {geminiConfig.model}</p>
+              <p><strong>Conversation ID:</strong> {conversationId || 'Initializing...'}</p>
+              <p><strong>Gemini Conversation ID:</strong> {geminiConversationId || 'Not initialized'}</p>
+              <p><strong>Conversation Status:</strong> {isHealthy ? '✅ Healthy' : '❌ Unhealthy'}</p>
+              <p><strong>Conversation Loading:</strong> {conversationLoading ? 'Yes' : 'No'}</p>
+              <p><strong>MCP Status:</strong> {mcpHealthy ? '✅ Healthy' : '❌ Unhealthy'}</p>
+              <p><strong>MCP Loading:</strong> {mcpLoading ? 'Yes' : 'No'}</p>
+              <p><strong>MCP Error:</strong> {mcpError || 'None'}</p>
+              <p><strong>Gemini Loading:</strong> {geminiLoading ? 'Yes' : 'No'}</p>
+              <p><strong>Gemini Error:</strong> {geminiError || 'None'}</p>
+              <p><strong>MCP Ads Count:</strong> {mcpAds.length}</p>
+              <p><strong>Display Ads Count:</strong> {displayAds.length}</p>
+              <p><strong>Status:</strong> Gemini MCP integration active - try sending a message!</p>
+            </div>
+          </details>
+        </div>
+
+        <div className="controls">
+          <button 
+            onClick={handleResetGeminiConversation}
+            className="reset-button"
+            disabled={isLoading}
+          >
+            🔄 Reset Gemini Conversation
+          </button>
+          
+          <button 
+            onClick={() => setShowAdsModal(true)}
+            className="ads-status-button"
+            disabled={isLoading}
+          >
+            🎯 Ads Status
+          </button>
         </div>
       </div>
 
@@ -203,44 +235,28 @@ export const ChatApp: React.FC = () => {
         <div className="chat-messages">
           {messages.length === 0 && (
             <div className="welcome-message">
-              <h3>Welcome to EarnLayer Chat Demo!</h3>
-              <p>This demo showcases the @earnlayer/chat-ads SDK in action.</p>
-              <p>Try asking about:</p>
-              <ul>
-                <li>"Tell me about AI tools"</li>
-                <li>"What are the best productivity apps?"</li>
-                <li>"How can I improve my coding skills?"</li>
-                <li>"What's new in technology?"</li>
-              </ul>
+              <h3>Welcome to EarnLayer SDK Demo!</h3>
+              <p>This is a Gemini-powered chat interface with MCP integration.</p>
+              <p>Try sending a message to see Gemini respond with contextual ads!</p>
             </div>
           )}
 
           {messages.map((message) => (
-            <div key={message.id} className="message-container">
-              <div className={`message ${message.isUser ? 'user' : 'assistant'}`}>
-                <div className="message-content">
-                  {message.text}
-                </div>
-                <div className="message-time">
-                  {message.timestamp.toLocaleTimeString()}
-                </div>
+            <div key={message.id} className={`message ${message.isUser ? 'user' : 'assistant'}`}>
+              <div className="message-content">
+                {message.text}
               </div>
-
-              {/* Display MCP ads for assistant messages */}
-              {!message.isUser && message.mcpResponse && (
-                <div className="mcp-ads-section">
-                  <h4>📎 Relevant Links (MCP Ads)</h4>
-                  <MCPAdDisplay mcpResponse={message.mcpResponse} />
-                </div>
-              )}
+              <div className="message-time">
+                {message.timestamp.toLocaleTimeString()}
+              </div>
             </div>
           ))}
           
-          {loading && (
+          {isLoading && (
             <div className="message assistant">
               <div className="message-content">
                 <div className="typing-indicator">
-                  <span></span>
+                  <span>🤖 Gemini is thinking...</span>
                   <span></span>
                   <span></span>
                 </div>
@@ -249,30 +265,6 @@ export const ChatApp: React.FC = () => {
           )}
           
           <div ref={messagesEndRef} />
-        </div>
-
-        <div className="chat-sidebar">
-          <h3>🎯 Display Ads</h3>
-          <div className="ads-container">
-            {messages
-              .filter(msg => !msg.isUser && msg.displayAds)
-              .flatMap(msg => msg.displayAds || [])
-              .map((ad) => (
-                <DisplayAdComponent
-                  key={ad.ad_id}
-                  ad={ad}
-                  onAdClick={handleAdClick}
-                  onAdError={handleAdError}
-                />
-              ))}
-          </div>
-          
-          {messages.filter(msg => !msg.isUser && msg.displayAds).length === 0 && (
-            <div className="no-ads-message">
-              <p>No ads to display yet.</p>
-              <p>Send a message to see contextual ads!</p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -283,15 +275,30 @@ export const ChatApp: React.FC = () => {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Type your message..."
-          disabled={loading}
+          disabled={isLoading}
         />
         <button 
           onClick={handleSendMessage}
-          disabled={loading || !inputValue.trim()}
+          disabled={!inputValue.trim() || isLoading}
         >
-          {loading ? 'Sending...' : 'Send'}
+          {isLoading ? 'Processing...' : 'Send'}
         </button>
       </div>
+
+      {showAdsModal && (
+        <AdsStatusModal
+          isOpen={showAdsModal}
+          onClose={() => setShowAdsModal(false)}
+          mcpAds={mcpAds}
+          displayAds={displayAds}
+          mcpLoading={mcpLoading}
+          mcpError={mcpError}
+          geminiLoading={geminiLoading}
+          geminiError={geminiError}
+          conversationId={conversationId}
+          geminiConversationId={geminiConversationId}
+        />
+      )}
     </div>
   );
 }; 

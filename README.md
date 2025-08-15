@@ -1,170 +1,173 @@
-# EarnLayer SDK Demo
+# 🎯 EarnLayer SDK Demo
 
-A comprehensive demonstration of the `@earnlayer/chat-ads` SDK in action. This React TypeScript application showcases how to integrate EarnLayer's contextual ads into a chat interface.
+A comprehensive demo showcasing the EarnLayer SDK with integrated conversation management, MCP ads, and display ads.
 
-## 🚀 Live Demo
+## 🚀 Quick Start
 
-Visit the live demo: [https://earnlayer-sdk-demo.vercel.app](https://earnlayer-sdk-demo.vercel.app)
+### Environment Setup
 
-## 🎯 Features Demonstrated
+1. **Configure Environment Variables**:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env and add your Gemini API key
+   nano .env
+   ```
 
-- **Real-time Chat Interface**: Functional chat application with user and assistant messages
-- **MCP Ads Integration**: Contextual hyperlink ads from EarnLayer's MCP server
-- **Display Ads**: Popup, banner, and other display ad types
-- **Ad Tracking**: Impression and click tracking functionality
-- **Responsive Design**: Works on desktop and mobile devices
-- **TypeScript**: Full type safety throughout the application
+2. **Add Your Gemini API Key**:
+   ```bash
+   # In .env file, replace:
+   VITE_GEMINI_API_KEY=your_actual_gemini_api_key_here
+   ```
 
-## 📦 Installation
+### Local Development Setup
+
+The demo is configured for local development with the earnlayer-sdk:
 
 ```bash
-# Clone the repository
-git clone https://github.com/choidog/earnlayer-sdk-demo.git
-cd earnlayer-sdk-demo
+# 1. Start the SDK in watch mode (in earnlayer-sdk directory)
+cd ../earnlayer-sdk
+npm run build:watch
 
-# Install dependencies
-npm install
-
-# Start the development server
+# 2. Start the demo (in this directory)
 npm run dev
 ```
 
-## 🎮 How to Use
+### Access the Demo
 
-1. **Start the application**: Run `npm run dev` and open `http://localhost:5173`
-2. **Try the suggested topics**:
-   - "Tell me about AI tools"
-   - "What are the best productivity apps?"
-   - "How can I improve my coding skills?"
-   - "What's new in technology?"
-3. **Watch the ads appear**: Contextual ads will appear based on your messages
-4. **Interact with ads**: Click on ads to see them open in new tabs
+- **Demo URL**: http://localhost:5173
+- **Backend API**: http://localhost:8000 (if running)
+- **MCP Server**: http://localhost:8001 (if running)
 
-## 🏗️ Architecture
+## ✨ Features
 
-### Components
+### True Gemini MCP Integration
+- ✅ **Gemini AI**: Real AI conversations with contextual responses
+- ✅ **MCP Server**: Vector search through your content database
+- ✅ **Context Enhancement**: Gemini gets relevant ads/content before responding
+- ✅ **Affiliate Integration**: Real affiliate codes and tracking
+- ✅ **Fallback System**: Works even without API keys
+- ✅ **Complete Logging**: All API calls and MCP interactions logged
 
-- **ChatApp**: Main chat interface component
-- **Message Display**: User and assistant message rendering
-- **Ad Integration**: MCP and display ad components
-- **Responsive Layout**: Sidebar for ads, main chat area
+### Integrated Chat Flow
+- ✅ **Conversation Management**: Automatic conversation initialization
+- ✅ **MCP Integration**: Hyperlink ads from MCP responses
+- ✅ **Display Ads**: Popup, banner, video, thinking ads via API
+- ✅ **Auto-Integration**: Display ads requested after MCP responses
+- ✅ **Impression Tracking**: Built-in analytics
+- ✅ **Error Handling**: Connection status and error display
 
-### SDK Integration
+### Real-time Development
+- ✅ **Hot Reload**: SDK changes reflect immediately
+- ✅ **TypeScript Support**: Full type safety
+- ✅ **Local Development**: No deployment cycles needed
 
-```tsx
-// Initialize SDK services
-const mcpClient = new MCPClient({
-  mcpUrl: 'https://your-mcp-server.com/mcp',
-  apiKey: 'your-api-key'
-});
+## 🎯 Demo Features
 
-const adService = new EarnLayerAdService({
-  mcpClient,
-  displayApiUrl: 'https://your-backend.com'
-});
+### Chat Interface
+- Real-time messaging with AI responses
+- Contextual ad display based on user messages
+- Conversation history with ad tracking
 
-// Use in chat component
-const handleMessage = async (message: string) => {
-  const ads = await adService.fetchAds(
-    message,
-    'creator-id',
-    'conversation-id',
-    { mcpAds: true, displayAds: ['popup', 'banner'] }
-  );
-  
-  setMcpResponse(ads.mcpAds);
-  setDisplayAds(ads.displayAds);
-};
-```
+### Ad Display
+- **MCP Ads**: Hyperlink ads from MCP responses
+- **Display Ads**: Sponsored content via API
+- **Sidebar**: Current ads display
+- **Analytics**: Impression and click tracking
 
-### Ad Types Demonstrated
-
-1. **MCP Ads**: Contextual hyperlink ads that appear as relevant links
-2. **Display Ads**: Popup and banner ads in the sidebar
-3. **Ad Tracking**: Impression and click tracking
+### Status Monitoring
+- Connection health indicators
+- Display ad availability
+- Error handling and retry functionality
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+The demo uses environment variables for configuration. See `.env.example` for all available options:
 
-```env
-VITE_MCP_URL=https://your-mcp-server.com/mcp
-VITE_API_KEY=your-api-key
-VITE_DISPLAY_API_URL=https://your-backend.com
+```bash
+# Required for full functionality
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+# Backend and MCP configuration
+VITE_BACKEND_URL=http://localhost:8000
+VITE_MCP_SERVER_URL=http://localhost:8001/mcp
+VITE_CREATOR_ID=d64a4899-20e4-4ecd-a53e-057aceed54cf
+
+# Gemini model configuration
+VITE_GEMINI_MODEL=gemini-2.0-flash-exp
+VITE_GEMINI_TEMPERATURE=0.7
+VITE_GEMINI_MAX_TOKENS=1000
 ```
 
-### Demo Mode
-
-The demo uses mock data to simulate real API responses. In production, replace the mock services with real API calls.
-
-## 📱 Screenshots
-
-### Desktop View
-- Main chat interface with sidebar ads
-- MCP ads displayed as relevant links
-- Display ads in the sidebar
-
-### Mobile View
-- Responsive design that adapts to smaller screens
-- Collapsible sidebar for ads
-- Touch-friendly interface
+### Default Connections
+- **Backend**: `http://localhost:8000`
+- **MCP Server**: `http://localhost:8001`
+- **Creator ID**: `d64a4899-20e4-4ecd-a53e-057aceed54cf`
 
 ## 🧪 Testing
 
+### Test Local SDK Setup
 ```bash
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
+node test-local-sdk.js
 ```
 
-## 🚀 Deployment
+### Try These Messages
+- "Tell me about AI tools"
+- "What are the best productivity apps?"
+- "How can I improve my coding skills?"
+- "What's new in technology?"
 
-### Vercel (Recommended)
+## 📚 Documentation
 
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
+- [Local Development Setup Guide](./LOCAL_DEVELOPMENT_SETUP.md)
+- [SDK Documentation](../earnlayer-sdk/README.md)
+- [API Reference](../earnlayer-sdk/README.md#api-reference)
 
-### Other Platforms
+## 🛠️ Development
 
-The demo can be deployed to any platform that supports React applications:
-- Netlify
-- GitHub Pages
-- AWS Amplify
-- Firebase Hosting
+### Commands
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
 
-## 📚 Related Links
+### File Structure
+```
+src/
+├── components/
+│   ├── ChatApp.tsx      # Main chat component
+│   └── ChatApp.css      # Chat styles
+├── main.tsx             # App entry point
+└── index.css            # Global styles
+```
 
-- **[SDK Documentation](https://github.com/choidog/earnlayer-sdk)**: Full SDK documentation and API reference
-- **[EarnLayer Documentation](https://docs.earnlayer.com)**: Official EarnLayer documentation
-- **[MCP Protocol](https://modelcontextprotocol.io)**: Model Context Protocol specification
+## 🎉 What's New
 
-## 🤝 Contributing
+### Latest Updates
+- ✅ **Integrated SDK**: Uses new conversation management
+- ✅ **Display Ads API**: Real display ads via API
+- ✅ **Auto-Integration**: Seamless MCP + display ads
+- ✅ **Local Development**: Real-time development setup
+- ✅ **Error Handling**: Comprehensive error management
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Key Improvements
+- Real conversation management instead of mock data
+- Actual API integration for display ads
+- Automatic display ad requests after MCP responses
+- Better error handling and status display
+- Local development workflow
 
-## 📄 License
+## 🔗 Related
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [EarnLayer SDK](../earnlayer-sdk/) - The main SDK package
+- [Backend API](../../EarnLayer-Spec/earnlayer-backend/) - Backend services
+- [MCP Server](../../EarnLayer-Spec/mcp-server/) - MCP server implementation
 
-## 📞 Support
+---
 
-For support and questions:
-- Create an issue on GitHub
-- Contact: support@earnlayer.com
-- Join our Discord: [EarnLayer Community](https://discord.gg/earnlayer)
-
-## 🎉 Acknowledgments
-
-- Built with [React](https://reactjs.org/)
-- Styled with [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS)
-- Bundled with [Vite](https://vitejs.dev/)
-- Powered by [EarnLayer](https://earnlayer.com)
+**EarnLayer SDK Demo** - Showcasing the future of contextual ads in chat applications! 🚀

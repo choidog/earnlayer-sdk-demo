@@ -38,6 +38,44 @@
   opacity: 0.8;
 }
 
+.debug-info {
+  margin-top: 15px;
+  text-align: left;
+}
+
+.debug-info summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #ffd700;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.debug-info summary:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.debug-details {
+  margin-top: 10px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.debug-details p {
+  margin: 5px 0;
+  color: #e0e0e0;
+}
+
+.debug-details strong {
+  color: #ffd700;
+}
+
 .chat-container {
   display: grid;
   grid-template-columns: 1fr 300px;
@@ -330,4 +368,74 @@
     flex-direction: column;
     gap: 5px;
   }
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.reset-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.reset-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ads-status-button {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ads-status-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+}
+
+.ads-status-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.warning-message {
+  background: #fff3cd;
+  color: #856404;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  text-align: center;
+  border: 1px solid #ffeaa7;
+}
+
+.warning-message code {
+  background: #f8f9fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
 } 
